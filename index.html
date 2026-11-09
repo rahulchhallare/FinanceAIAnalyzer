@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinAI For Banks – Company Financial Health</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#12171f;--mu:#5b6574;--bd:#e0e5ec;--ac:#1f4fd8;--strong:#14924f;--mod:#c98a00;--weak:#e2701b;--dist:#d23a3a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1218;--card:#171d26;--tx:#e8ecf2;--mu:#97a1b1;--bd:#29323f;--ac:#7096ff;--strong:#3ecb80;--mod:#f0b429;--weak:#f58d42;--dist:#f06565}}
+:root[data-theme="dark"]{--bg:#0e1218;--card:#171d26;--tx:#e8ecf2;--mu:#97a1b1;--bd:#29323f;--ac:#7096ff;--strong:#3ecb80;--mod:#f0b429;--weak:#f58d42;--dist:#f06565}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:24px;margin:2px 0}.sub{color:var(--mu);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input,textarea,select{padding:11px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+input{flex:1;min-width:180px}textarea{width:100%;margin-top:10px;min-height:52px;resize:vertical}
+button{padding:11px 18px;border:0;border-radius:10px;background:var(--ac);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--tx);border:1px solid var(--bd)}button:disabled{opacity:.5;cursor:default}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.chip{padding:5px 11px;border:1px solid var(--bd);border-radius:99px;font-size:13px;color:var(--mu);background:transparent;font-weight:500}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.st{flex:1;min-width:150px;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--mu)}
+.st.on{border-color:var(--ac);color:var(--tx)}.st.ok{border-color:var(--strong);color:var(--tx)}.st.er{border-color:var(--dist);color:var(--tx)}
+.hero{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.badge{display:inline-block;padding:6px 14px;border-radius:99px;font-weight:700;color:#fff}
+.score{font-size:44px;font-weight:800;line-height:1}.bar{height:10px;border-radius:99px;background:var(--bd);overflow:hidden;margin-top:8px}.bar>i{display:block;height:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}.m{border:1px solid var(--bd);border-radius:10px;padding:10px}.m b{display:block;font-size:17px}.m span,.note{color:var(--mu);font-size:12.5px}
+h2{font-size:16px;margin:0 0 8px}ul{margin:0;padding-left:20px}li{margin:4px 0}
+.warn{border-left:4px solid var(--mod);padding:8px 12px;background:var(--card);border-radius:6px;font-size:13px;color:var(--mu);margin-bottom:14px}
+.post{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px}
+.hidden{display:none}.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px}td,th{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left}
+a{color:var(--ac);word-break:break-all}summary{cursor:pointer;font-weight:600}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script></head>
+<body><main>
+<h1>🏦 FinAI For Banks</h1>
+<p class="sub">Enter any company to see how it is doing financially: data collected online, summarized, with key insights and a health category.</p>
+
+<div class="card">
+  <div class="row"><input id="co" placeholder="Company name, e.g. Shoprite, Sasol, MTN Group" autocomplete="off">
+  <input id="code" type="password" placeholder="Access code" autocomplete="off" style="flex:0 1 150px;min-width:120px"><select id="ctry"><option value="South Africa">South Africa</option><option value="">Any country</option></select>
+  <button id="go">Analyze</button><button id="stop" class="sec hidden">Stop</button></div>
+  <div class="chips" id="chips"></div>
+  <textarea id="extra" placeholder="Optional: paste figures from an annual report, SENS announcement or client financials"></textarea>
+  <div class="steps" id="steps"></div>
+  <p class="note" id="status" style="margin:10px 0 0"></p>
+</div>
+
+<div id="out" class="hidden">
+  <div class="card"><div class="hero">
+    <div><div class="note">Financial health score</div><div class="score" id="score"></div></div>
+    <div style="flex:1;min-width:200px"><span class="badge" id="cat"></span><div class="bar"><i id="fill"></i></div>
+    <div class="note" style="margin-top:6px">Strong ≥ 70 · Moderate 50–69 · Weak 30–49 · Distressed &lt; 30</div></div></div>
+    <p id="name" style="margin:12px 0 0;font-weight:600"></p>
+    <div class="post" id="post"></div></div>
+  <div class="card"><h2>Summary</h2><div id="summary"></div></div>
+  <div class="card"><h2>Key figures</h2><div class="grid" id="metrics"></div></div>
+  <div class="card"><h2>Score breakdown</h2><div class="tw"><table id="brk"></table></div></div>
+  <div class="card"><h2>Key insights</h2><ul id="ins"></ul></div>
+  <div class="card"><h2>Risks and red flags</h2><ul id="risks"></ul></div>
+  <div class="card"><details><summary id="evt">Evidence</summary><ul id="evl" style="margin-top:8px"></ul></details></div>
+  <div class="warn" id="warn"></div>
+  <div class="row"><button id="pdf">Download PDF</button><button class="sec" id="copy">Copy report</button></div>
+</div>
+<p class="note">Information prototype. Not financial, investment or credit advice. Verify figures against source filings.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>typeof v==="number"&&isFinite(v);
+const sc=(v,t,s)=>{for(let i=0;i<t.length;i++)if(v<t[i])return s[i];return s[s.length-1]};
+const RUBRIC=[
+ {k:"revenue_growth_pct",l:"Revenue growth",w:1,u:"%",f:v=>sc(v,[0,5,10,20],[20,45,65,80,95])},
+ {k:"operating_margin_pct",l:"Operating margin",w:1.2,u:"%",f:v=>sc(v,[0,5,10,20],[10,35,55,75,95])},
+ {k:"net_margin_pct",l:"Net margin",w:1,u:"%",f:v=>sc(v,[0,3,8,15],[10,35,55,75,95])},
+ {k:"roe_pct",l:"Return on equity",w:1,u:"%",f:v=>sc(v,[0,5,10,15],[10,35,55,75,92])},
+ {k:"net_debt_to_ebitda",l:"Net debt / EBITDA",w:1.4,u:"x",f:v=>sc(v,[1,2,3,4.5],[95,80,60,35,15])},
+ {k:"debt_to_equity",l:"Debt / equity",w:1.2,u:"x",f:v=>sc(v,[.3,.7,1.5,2.5],[95,80,60,35,15])},
+ {k:"current_ratio",l:"Current ratio",w:1,u:"x",f:v=>sc(v,[.8,1,1.5,2],[20,40,65,80,90])},
+ {k:"interest_coverage",l:"Interest coverage",w:1.3,u:"x",f:v=>sc(v,[1.5,3,6,10],[15,40,65,82,95])},
+ {k:"free_cash_flow_positive",l:"Free cash flow positive",w:1,u:"",f:v=>v?80:25}
+];
+const RUBRIC_BANK=[
+ {k:"roe_pct",l:"Return on equity",w:1.3,u:"%",f:v=>sc(v,[0,8,12,16],[10,35,55,75,92])},
+ {k:"cet1_ratio_pct",l:"CET1 capital ratio",w:1.5,u:"%",f:v=>sc(v,[9,10.5,12,14],[10,35,60,80,92])},
+ {k:"credit_loss_ratio_bps",l:"Credit loss ratio",w:1.2,u:" bps",f:v=>sc(v,[50,100,150,250],[92,75,55,35,15])},
+ {k:"npl_ratio_pct",l:"Non-performing loans",w:1.2,u:"%",f:v=>sc(v,[2,4,6,10],[92,75,55,35,15])},
+ {k:"cost_to_income_pct",l:"Cost-to-income",w:1,u:"%",f:v=>sc(v,[45,55,65,75],[92,78,60,40,20])},
+ {k:"liquidity_coverage_ratio_pct",l:"Liquidity coverage ratio",w:1,u:"%",f:v=>sc(v,[100,115,130,150],[10,45,65,80,92])},
+ {k:"earnings_growth_pct",l:"Earnings growth",w:.8,u:"%",f:v=>sc(v,[0,5,10,20],[20,45,65,80,95])}
+];
+const cat=s=>s>=70?["Financially Strong","var(--strong)","Financially healthy: strong profitability and balance sheet."]:s>=50?["Moderate","var(--mod)","Stable overall, with some areas to watch."]:s>=30?["Weak","var(--weak)","Under financial pressure: several metrics are weak."]:["Distressed","var(--dist)","Serious financial stress: distress signals or very weak metrics."];
+["Shoprite","Sasol","MTN Group","Steinhoff","Eskom"].forEach(n=>{const c=document.createElement("button");c.className="chip";c.textContent=n;c.onclick=()=>{$("co").value=n;run()};$("chips").appendChild(c)});
+const STEPS=["1. Collect online data","2. Analyze with AI","3. Score and categorize","4. Report"];
+function setSteps(a,e){$("steps").innerHTML=STEPS.map((s,i)=>`<div class="st ${e===i?"er":i<a?"ok":i===a?"on":""}">${s}</div>`).join("")}
+setSteps(-1);
+let ctl,last="",rep=null;
+async function run(){
+  const name=$("co").value.trim();if(!name)return;
+  ctl=new AbortController();$("go").disabled=true;$("stop").classList.remove("hidden");$("out").classList.add("hidden");
+  let step=0;setSteps(0);$("status").textContent="Collecting online data and analyzing… (up to a minute)";
+  const t=setTimeout(()=>{step=1;setSteps(1)},7000);
+  try{
+    const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,code:$("code").value,country:$("ctry").value,extra:$("extra").value.trim()}),signal:ctl.signal});
+    const j=await r.json().catch(()=>({}));if(!r.ok)throw{msg:j.error||"Server error ("+r.status+")"};
+    step=2;setSteps(2);render(j.data,j.ev||[],j.live);setSteps(4);$("status").textContent="";
+  }catch(e){setSteps(step,step);$("status").textContent=e.name==="AbortError"?"Stopped.":(e.msg||"Couldn’t complete the analysis. Try again.")}
+  finally{clearTimeout(t);$("go").disabled=false;$("stop").classList.add("hidden")}
+}
+
+function render(d,ev,live){
+  const bank=d.institution_type==="bank",R=bank?RUBRIC_BANK:RUBRIC;
+  const rows=[],est=d.estimated||[];let tw=0,ts=0;
+  R.forEach(r=>{const v=d[r.k];if(v==null||(r.k!=="free_cash_flow_positive"&&!num(v)))return;const s=r.f(v);rows.push([r.l,v,r.u,s,est.includes(r.k)]);tw+=r.w;ts+=s*r.w});
+  $("out").classList.remove("hidden");
+  $("name").textContent=[d.company,d.ticker,d.currency,d.period].filter(Boolean).concat(bank?["Bank rubric"]:[]).join(" · ");
+  $("summary").textContent=d.summary||"";
+  $("ins").innerHTML=(d.insights||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+  $("risks").innerHTML=(d.risks||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+  $("metrics").innerHTML=[["Revenue",d.revenue],["Net income",d.net_income],["Net debt",d.net_debt],["Total assets",d.total_assets],["Credit rating",d.credit_rating],["AI confidence",d.confidence]].filter(m=>m[1]).map(m=>`<div class="m"><b>${esc(m[1])}</b><span>${m[0]}</span></div>`).join("");
+  let capped=false,txt="";
+  if(rows.length<3){
+    $("score").textContent="–";$("cat").textContent="Insufficient data";$("cat").style.background="var(--mu)";$("fill").style.width="0";
+    $("post").textContent=d.institution_type==="insurer"?"Insurers are not covered by the current rubric.":bank?"Fewer than 3 reliable bank metrics found. Paste the results (CET1, credit loss ratio, ROE, cost-to-income) and re-run.":"Fewer than 3 reliable metrics found. Request client financials and re-run.";
+    $("brk").innerHTML="<tr><td>No rating given.</td></tr>";txt="Insufficient data";
+  }else{
+    let score=Math.round(ts/tw);if(d.distress_signals&&score>45){score=45;capped=true}
+    const[c,col,p]=cat(score);
+    $("score").textContent=score;$("cat").textContent=c;$("cat").style.background=col;$("fill").style.width=score+"%";$("fill").style.background=col;
+    $("post").innerHTML="<b>Overall assessment:</b> "+p+(capped?" <i>Score capped at 45 because distress signals were found in the evidence.</i>":"");
+    $("brk").innerHTML="<tr><th>Metric</th><th>Value</th><th>Sub-score</th></tr>"+rows.map(r=>`<tr><td>${r[0]}${r[4]?" (est.)":""}</td><td>${r[1]===true?"Yes":r[1]===false?"No":r[1]+r[2]}</td><td>${r[3]}/100</td></tr>`).join("");
+    txt=`${c} (${score}/100)`;
+  }
+  const used=(d.sources_used||[]).filter(i=>ev[i-1]);const show=used.length?used.map(i=>ev[i-1]):ev;
+  $("evt").textContent=live?`Evidence: ${ev.length} sources collected, ${used.length||"all"} used`:"Evidence: no live sources (AI knowledge only)";
+  $("evl").innerHTML=show.map(e=>/^https?:\/\//.test(e.url)?`<li><a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.title)}</a></li>`:"").join("")||"<li>None</li>";
+  $("warn").textContent=(live?"":"Not live data: figures come from AI knowledge and may be outdated. ")+(d.data_caveat||"")+" Metrics scored: "+rows.length+" of "+R.length+".";
+  rep={d,rows,used:show,live,head:txt,post:$("post").textContent};
+  last=`${d.company||""} – ${txt}\n${d.summary||""}\nInsights:\n- ${(d.insights||[]).join("\n- ")}\nRisks:\n- ${(d.risks||[]).join("\n- ")}`;
+}
+function clean(s){return String(s==null?"":s).replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[\u2013\u2014]/g,"-").replace(/\u2265/g,">=").replace(/\u00B7/g,"|").replace(/\u2026/g,"...").replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u00FF]/g,"")}
+async function savePdf(){
+  if(!rep)return;const btn=$("pdf");
+  if(!window.jspdf){btn.textContent="PDF library not loaded";setTimeout(()=>btn.textContent="Download PDF",2000);return}
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"}),PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=48,MW=PW-2*M;let y=M;
+  const p=(t,sz,b,gap,col)=>{sz=sz||10.5;doc.setFont("helvetica",b?"bold":"normal");doc.setFontSize(sz);doc.setTextColor.apply(doc,col||[30,30,30]);doc.splitTextToSize(clean(t),MW).forEach(l=>{if(y+sz*1.4>PH-M){doc.addPage();y=M}doc.text(l,M,y);y+=sz*1.4});y+=(gap==null?6:gap)};
+  const hd=t=>{y+=8;p(t,12.5,true,4)};
+  const {d,rows,used,live,head,post}=rep;
+  p("FinAI For Banks",18,true,2);p("Company financial health report",11,false,2,[90,90,90]);p("Generated "+new Date().toDateString(),9,false,10,[120,120,120]);
+  p([d.company,d.ticker,d.currency,d.period].filter(Boolean).join(" | "),12,true,4);
+  p("Category: "+head,14,true,4);p(post,10.5,false,8);
+  hd("Summary");p(d.summary||"");
+  hd("Key figures");[["Revenue",d.revenue],["Net income",d.net_income],["Net debt",d.net_debt],["Total assets",d.total_assets],["Credit rating",d.credit_rating],["AI confidence",d.confidence]].forEach(m=>{if(m[1])p(m[0]+": "+m[1],10.5,false,2)});
+  hd("Score breakdown");rows.forEach(r=>p(r[0]+(r[4]?" (est.)":"")+": "+(r[1]===true?"Yes":r[1]===false?"No":r[1]+r[2])+"  ->  "+r[3]+"/100",10.5,false,2));
+  hd("Key insights");(d.insights||[]).forEach(x=>p("- "+x,10.5,false,3));
+  hd("Risks and red flags");(d.risks||[]).forEach(x=>p("- "+x,10.5,false,3));
+  hd(live?"Evidence sources":"Evidence");if(!used.length)p("No live sources (AI knowledge only).");used.forEach(e=>p("- "+e.title+"\n  "+e.url,9,false,3));
+  hd("Data caveat");p((live?"":"Not live data: figures come from AI knowledge and may be outdated. ")+(d.data_caveat||""));
+  p("For information only. Not financial, investment or credit advice. Verify figures against source filings.",8.5,false,0,[110,110,110]);
+  const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(130,130,130);doc.text("Page "+i+" of "+n,PW-M,PH-24,{align:"right"})}
+  const fn="FinAI_"+clean(d.company||"report").replace(/[^A-Za-z0-9]+/g,"_")+"_"+new Date().toISOString().slice(0,10)+".pdf";
+  let dl=null;try{if(typeof claude!=="undefined")dl=await claude.use("downloads")}catch(e){}
+  if(dl){try{await dl.save({filename:fn,data:doc.output("blob")})}catch(e){btn.textContent="Save unavailable"}}
+  else doc.save(fn);
+  setTimeout(()=>btn.textContent="Download PDF",1800)
+}
+$("pdf").onclick=savePdf;
+$("go").onclick=run;$("stop").onclick=()=>ctl&&ctl.abort();
+$("co").addEventListener("keydown",e=>{if(e.key==="Enter")run()});
+$("copy").onclick=async()=>{try{await navigator.clipboard.writeText(last);$("copy").textContent="Copied"}catch(e){$("copy").textContent="Copy not allowed here"}setTimeout(()=>$("copy").textContent="Copy report",1800)};
+</script></body></html>
