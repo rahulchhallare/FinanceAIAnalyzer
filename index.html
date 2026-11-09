@@ -100,7 +100,9 @@ async function run(){
   try{
     const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,code:$("code").value,country:$("ctry").value,extra:$("extra").value.trim()}),signal:ctl.signal});
     const j=await r.json().catch(()=>({}));if(!r.ok)throw{msg:j.error||"Server error ("+r.status+")"};
+    if(j.unavailable){setSteps(0,0);$("status").innerHTML="<b>Live data unavailable.</b> "+esc((j.diag||[]).join(" | "))+". No score is shown because it would be based on AI memory. Try again, or paste figures from the company\u2019s results in the box above.";return}
     step=2;setSteps(2);render(j.data,j.ev||[],j.live);setSteps(4);$("status").textContent="";
+    if(!j.live){$("post").innerHTML+=$("extra").value.trim()?" <i>Based on the figures you pasted.</i>":" <i>Not based on live data, so treat as indicative only.</i>";if(j.diag&&j.diag.length)$("warn").textContent="Live data collection failed: "+j.diag.join(" | ")+". "+$("warn").textContent}
   }catch(e){setSteps(step,step);$("status").textContent=e.name==="AbortError"?"Stopped.":(e.msg||"Couldn’t complete the analysis. Try again.")}
   finally{clearTimeout(t);$("go").disabled=false;$("stop").classList.add("hidden")}
 }
