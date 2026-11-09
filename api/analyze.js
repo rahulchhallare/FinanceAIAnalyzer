@@ -1,13 +1,13 @@
 // Vercel serverless function: collects web evidence (Firecrawl) and analyzes it (Claude).
 // Env vars: ANTHROPIC_API_KEY (required), FIRECRAWL_API_KEY (recommended), ANTHROPIC_MODEL (optional)
-const QUERIES=["annual financial results revenue operating profit net profit","net debt borrowings liquidity cash flow interest cover","credit rating Moody's S&P Fitch outlook","latest news trading statement risk litigation regulatory"];
+const QUERIES=["annual financial results revenue operating profit net profit","net debt borrowings liquidity cash flow interest cover","credit rating Moody's S&P Fitch outlook","latest news trading statement risk litigation regulatory","results highlights key ratios return on equity"];
 
 async function fcSearch(q,key){
   const body=JSON.stringify({query:q,limit:4});
   const h={"Content-Type":"application/json",Authorization:"Bearer "+key};
   let r=await fetch("https://api.firecrawl.dev/v2/search",{method:"POST",headers:h,body});
   if(r.status===404)r=await fetch("https://api.firecrawl.dev/v1/search",{method:"POST",headers:h,body});
-  if(!r.ok)throw new Error("firecrawl "+r.status);
+  if(!r.ok){let m="";try{m=(await r.text()).slice(0,100)}catch(e){}throw new Error("Firecrawl error "+r.status+(m?": "+m:""))}
   const j=await r.json();
   return Array.isArray(j.data)?j.data:((j.data&&j.data.web)||[]);
 }
@@ -40,13 +40,15 @@ module.exports=async(req,res)=>{
   if(!AK)return res.status(500).json({error:"Server is missing ANTHROPIC_API_KEY."});
   const co=name.trim(),ctry=typeof country==="string"?country.slice(0,40):"",ex=typeof extra==="string"?extra.slice(0,20000):"";
   const n=co+(ctry?" "+ctry:"");
-  let ev=[],live=false;
+  let ev=[],live=false;const diag=[];
+  if(!FK)diag.push("FIRECRAWL_API_KEY is not set in Vercel");
   if(FK){
     const rs=await Promise.allSettled(QUERIES.map(q=>fcSearch(n+" "+q,FK)));
     const seen=new Set();let ok=0;
-    rs.forEach(r=>{if(r.status!=="fulfilled")return;ok++;r.value.forEach(w=>{if(w.url&&!seen.has(w.url)){seen.add(w.url);ev.push({url:w.url,title:w.title||w.url,text:String(w.description||w.markdown||"").slice(0,3000)})}})});
-    live=ok>0&&ev.length>0;
+    rs.forEach(r=>{if(r.status!=="fulfilled"){const m=String((r.reason&&r.reason.message)||r.reason);if(!diag.includes(m))diag.push(m);return}ok++;r.value.forEach(w=>{if(w.url&&!seen.has(w.url)){seen.add(w.url);ev.push({url:w.url,title:w.title||w.url,text:String(w.description||w.markdown||"").slice(0,3000)})}})});
+    live=ok>0&&ev.length>0;if(ok>0&&!ev.length)diag.push("Firecrawl returned no results");
   }
+  if(!live&&!ex.trim())return res.status(200).json({unavailable:true,diag:diag.length?diag.slice(0,3):["No sources could be collected"],ev:[],live:false});
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"content-type":"application/json","x-api-key":AK,"anthropic-version":"2023-06-01"},
@@ -55,6 +57,6 @@ module.exports=async(req,res)=>{
     if(!r.ok)return res.status(502).json({error:"AI error: "+((j.error&&j.error.message)||r.status)});
     const txt=(j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");
     const data=JSON.parse(txt.slice(txt.indexOf("{"),txt.lastIndexOf("}")+1));
-    return res.status(200).json({data,ev,live});
+    return res.status(200).json({data,ev,live,diag:diag.slice(0,3)});
   }catch(e){return res.status(502).json({error:"Could not parse the AI response. Try again."})}
 };
